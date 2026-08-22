@@ -63,14 +63,37 @@ class Platform:
         self.bus = A2ABus()
         self.orchestrator = Orchestrator(engine=self.engine, registry=self.registry, bus=self.bus)
 
-        # Built-in outcome modules register themselves here.
+        # Built-in outcome modules register themselves here. Integrations
+        # go live automatically when their env credentials are present —
+        # no code changes needed to move from fixtures to real systems.
+        import os
+
+        from agentos.services.integrations.github import GitHubClient
+        from agentos.services.integrations.jira import JiraClient
+        from agentos.services.integrations.slack import SlackClient
         from agentos.services.outcomes.codebase import CodebaseModule
         from agentos.services.outcomes.compliance import ComplianceModule
         from agentos.services.outcomes.support import SupportModule
 
-        self.support = SupportModule()
-        self.compliance = ComplianceModule()
-        self.codebase = CodebaseModule()
+        self.support = SupportModule(
+            jira=JiraClient(
+                base_url=os.environ.get("AGENTOS_JIRA_BASE_URL"),
+                token=os.environ.get("AGENTOS_JIRA_TOKEN"),
+            ),
+            slack=SlackClient(
+                bot_token=os.environ.get("AGENTOS_SLACK_BOT_TOKEN") or None,
+            ),
+            llm=self.llm,
+        )
+        self.compliance = ComplianceModule(
+            slack=SlackClient(bot_token=os.environ.get("AGENTOS_SLACK_BOT_TOKEN") or None),
+        )
+        self.codebase = CodebaseModule(
+            github=GitHubClient(
+                base_url=os.environ.get("AGENTOS_GITHUB_BASE_URL"),
+                token=os.environ.get("AGENTOS_GITHUB_TOKEN"),
+            ),
+        )
         for module in (self.support, self.compliance, self.codebase):
             self.registry.register_module(module)
 
