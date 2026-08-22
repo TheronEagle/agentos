@@ -1,0 +1,86 @@
+# One-command spin-up: `docker compose up --build`
+#
+# Services:
+#   api      → the AgentOS FastAPI surface (the product)
+#   worker   → Celery worker for distributed goal execution
+#   redis    → ephemeral agent context + Celery broker
+#   postgres → durable goals/executions state
+#
+# No frontend service. The API docs at http://localhost:8080/docs are the UI.
+
+services:
+  api:
+    build: .
+    image: agentos:latest
+    command: >
+      uvicorn agentos.interfaces.api:get_app
+      --factory --host 0.0.0.0 --port 8080
+    environment:
+      AGENTOS_DATABASE_URL: postgresql+asyncpg://agentos:agentos@postgres:5432/agentos
+      AGENTOS_REDIS_URL: redis://redis:6379/0
+      AGENTOS_CELERY_BROKER_URL: redis://redis:6379/1
+      AGENTOS_LLM_PROVIDER: ${AGENTOS_LLM_PROVIDER:-none}
+      AGENTOS_LLM_MODEL: ${AGENTOS_LLM_MODEL:-}
+      AGENTOS_LLM_API_KEY: ${AGENTOS_LLM_API_KEY:-}
+      AGENTOS_LLM_BASE_URL: ${AGENTOS_LLM_BASE_URL:-}
+      AGENTOS_APPROVAL_POLICY: ${AGENTOS_APPROVAL_POLICY:-never}
+      AGENTOS_WEBHOOK_SECRET: ${AGENTOS_WEBHOOK_SECRET:-}
+      AGENTOS_API_KEY: ${AGENTOS_API_KEY:-}
+      AGENTOS_LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: .
+    image: agentos:latest
+    command: celery -A agentos.interfaces.queue:run_worker worker --loglevel=info --concurrency=4
+    environment:
+      AGENTOS_DATABASE_URL: postgresql+asyncpg://agentos:agentos@postgres:5432/agentos
+      AGENTOS_CELERY_BROKER_URL: redis://redis:6379/1
+      AGENTOS_LLM_PROVIDER: ${AGENTOS_LLM_PROVIDER:-none}
+      AGENTOS_LLM_MODEL: ${AGENTOS_LLM_MODEL:-}
+      AGENTOS_LLM_API_KEY: ${AGENTOS_LLM_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agentos
+      POSTGRES_PASSWORD: agentos
+      POSTGRES_DB: agentos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentos"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
