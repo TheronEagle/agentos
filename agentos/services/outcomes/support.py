@@ -92,11 +92,19 @@ class SupportModule(OutcomeModule):
                     await self.slack.post_message(
                         "#support-outcomes", f"Resolved {closed.key}: {ticket.summary}"
                     )
-            channel = (
-                task.params.get("notify_channel") or ("#support-outcomes" if not self.slack.live else None)
-            )
-            if channel:
+            channel = task.params.get("notify_channel")
+            if channel is None:
+                # Live mode: post to the env-configured channel. Mock mode:
+                # keep fixture chatter in the in-memory client.
+                import os
+
+                channel = "#support-outcomes" if not self.slack.live else os.environ.get(
+                    "AGENTOS_SLACK_CHANNEL", "general"
+                )
+            try:
                 await self.slack.post_message(channel, f"Resolved {len(resolved)} ticket(s): {', '.join(resolved)}")
+            except Exception as exc:  # noqa: BLE001 - notification must not fail the outcome
+                execution.add_event("webhook_sent", f"slack notify failed: {exc}")
             # Record what THIS execution resolved, keyed by execution id, so
             # validate() judges this run's work — never another run's.
             self._resolved_by_execution[execution.id] = sorted(set(resolved))

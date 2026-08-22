@@ -104,7 +104,9 @@ class ComplianceModule(OutcomeModule):
             path.write_text(report.model_dump_json(indent=2))
             report.artifact = artifact
             report.filed = True
-            channel = "#compliance"
+            import os
+
+            channel = os.environ.get("AGENTOS_SLACK_CHANNEL", "general")
             await self.slack.post_message(
                 channel,
                 f"SOC-2 evidence report for {report.period} filed by agent (`{execution.id}`).",
