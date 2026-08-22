@@ -59,6 +59,33 @@ class JiraClient:
                     description=f"Customer reports: {summary.lower()}.",
                 )
 
+        # Demo realism: the fixture queue replenishes. A real helpdesk keeps
+        # receiving tickets, so a resolved mock ticket re-opens after a short
+        # window instead of leaving the queue permanently empty.
+        self._reopen_after_seconds = 30
+        self._resolved_at: dict[str, datetime] = {}
+
+    def reset(self) -> None:
+        """Restore the original fixture queue (demo/testing helper)."""
+        self._tickets.clear()
+        self._resolved_at.clear()
+        fresh = JiraClient(base_url=self.base_url, token=self.token)
+        self._tickets.update(fresh._tickets)
+
+    def _replenish(self) -> None:
+        """Re-open resolved fixture tickets older than the reopen window."""
+        if self.live:
+            return
+        now = datetime.now(UTC)
+        for key, ticket in list(self._tickets.items()):
+            if ticket.status == "resolved" and key in self._resolved_at:
+                age = (now - self._resolved_at[key]).total_seconds()
+                if age > self._reopen_after_seconds:
+                    ticket.status = "open"
+                    ticket.resolution = None
+                    ticket.resolved_by = None
+                    del self._resolved_at[key]
+
     @property
     def live(self) -> bool:
         return self.base_url is not None
@@ -70,6 +97,7 @@ class JiraClient:
         return headers
 
     async def list_open_tier1(self, within_hours: int = 24) -> list[Ticket]:
+        self._replenish()
         cutoff = datetime.now(UTC) - timedelta(hours=within_hours)
         if not self.live:
             return [
@@ -117,6 +145,7 @@ class JiraClient:
             ticket.status = "resolved"
             ticket.resolution = resolution
             ticket.resolved_by = resolved_by
+            self._resolved_at[ticket_key] = datetime.now(UTC)
             return ticket.model_copy(deep=True)
         async with httpx.AsyncClient(base_url=self.base_url, headers=self._headers(), timeout=30) as client:
             transitions = await client.get(f"/rest/api/3/issue/{ticket_key}/transitions")

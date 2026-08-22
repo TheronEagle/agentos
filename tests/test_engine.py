@@ -82,6 +82,19 @@ async def test_approval_deny_cancels_run(store) -> None:
 
 
 @pytest.mark.asyncio
+async def test_same_goal_twice_both_validate(platform) -> None:
+    """Regression: second delegation of an identical goal must not inherit
+    the first run's state. Caught by a from-scratch clone-and-run test."""
+    for i in (1, 2):
+        execution = await platform.engine.submit(support_goal())
+        final = await platform.engine.wait_for(execution.id, timeout=10)
+        assert final is not None and final.status == "completed", (
+            f"run {i} failed: {final.error if final else 'timeout'}"
+        )
+        assert final.outcome is not None and final.outcome.validated is True
+
+
+@pytest.mark.asyncio
 async def test_delivery_hook_fires_on_completion(platform) -> None:
     seen: list[dict] = []
 

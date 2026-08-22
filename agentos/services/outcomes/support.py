@@ -45,6 +45,7 @@ class SupportModule(OutcomeModule):
         self.slack = slack or SlackClient()
         self._llm = llm
         self._handled: dict[str, list[Ticket]] = {}
+        self._resolved_by_execution: dict[str, list[str]] = {}
 
     # ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -91,9 +92,14 @@ class SupportModule(OutcomeModule):
                     await self.slack.post_message(
                         "#support-outcomes", f"Resolved {closed.key}: {ticket.summary}"
                     )
-            channel = task.params.get("notify_channel") or ("#support-outcomes" if not self.slack.live else None)
+            channel = (
+                task.params.get("notify_channel") or ("#support-outcomes" if not self.slack.live else None)
+            )
             if channel:
                 await self.slack.post_message(channel, f"Resolved {len(resolved)} ticket(s): {', '.join(resolved)}")
+            # Record what THIS execution resolved, keyed by execution id, so
+            # validate() judges this run's work — never another run's.
+            self._resolved_by_execution[execution.id] = sorted(set(resolved))
             return {"resolved": resolved, "count": len(resolved)}
 
         raise ValueError(f"support module cannot execute action {task.action!r}")
@@ -111,10 +117,20 @@ class SupportModule(OutcomeModule):
         )
 
     async def validate(self, outcome: Outcome, execution: Execution) -> bool:
-        # Self-check: any ticket we fetched must have ended resolved.
-        expected = {t.key for t in next(iter(self._handled.values()), [])}
+        """Self-check scoped to THIS execution.
+
+        Every ticket this execution fetched must appear in its own resolved
+        set with well-formed keys. Cross-run state is never consulted, so
+        repeated delegations of the same goal validate independently.
+        """
+        fetched = {t.key for t in self._handled.get(execution.goal_id, [])}
+        claimed = set(self._resolved_by_execution.get(execution.id, []))
         metrics_resolved = outcome.metrics.get("tickets_resolved")
-        if metrics_resolved != len(expected):
+
+        # Zero-ticket runs are legitimately valid (queue was empty).
+        if not fetched and metrics_resolved == 0:
+            return True
+        if metrics_resolved != len(fetched) or not fetched <= claimed:
             return False
         return all(re.match(r"^(jira:)?[A-Z]+-\d+$", key) for key in outcome.artifacts)
 
