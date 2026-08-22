@@ -73,6 +73,11 @@ docker compose up --build
 
 ### Three outcomes, zero clicks
 
+```bash
+# after starting the server:
+./examples/demo.sh   # 30-second guided tour of the full agent loop
+```
+
 ```python
 from agentos.models import Goal
 from agentos.interfaces.api import Platform
@@ -91,6 +96,28 @@ await platform.engine.submit(Goal(description="Update all outdated dependencies 
 
 Runnable versions live in [`examples/`](examples/) — each prints the delegation,
 the plan, the outcome, and the full audit trail.
+
+### What's real vs. mocked (read this before starring)
+
+| Component | Status |
+|---|---|
+| Goal → plan → execute → validate → deliver pipeline | ✅ Real |
+| HTTP API (202 + ExecutionID, polling, approval gates, A2A) | ✅ Real |
+| Compliance module writing its report | ✅ Real file on disk |
+| Append-only audit trails & structured logs | ✅ Real |
+| **Jira / GitHub / Slack side effects** | 🎭 Mocked (deterministic fixtures) |
+
+**What "mocked" means:** the autonomous pipeline is real — routing, planning,
+dependency execution, self-validation, audit trails. The integrations simulate
+the outside world so the demo runs with zero API keys. The `support` module
+resolves tickets *in the fixture store*; `codebase` opens PRs on a fictional
+repo. Point the clients at real APIs via config to go live
+([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)).
+
+**Honesty is a design constraint here:** outcomes carry `validated=true` only
+after the module's own self-check passes, and every claim is traceable in the
+execution audit trail. An agent that can't prove its work shouldn't claim it —
+including this one.
 
 ## Why Not Just Use SaaS?
 
