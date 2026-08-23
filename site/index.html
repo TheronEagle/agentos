@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentOS — From SaaS to Service-as-Software</title>
+<meta name="description" content="Open-source platform where autonomous AI agents are the operators and you delegate outcomes. No seats, no clicks — outcomes delivered.">
+<style>
+  :root {
+    --bg: #0a0e14; --bg2: #0f1520; --panel: #121a26; --line: #1e2a3a;
+    --text: #d7e2ee; --dim: #7d8ca0; --faint: #4a5a70;
+    --green: #3ddc97; --amber: #ffb454; --violet: #a78bfa; --red: #ff6b6b;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  a { color: var(--violet); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; background: rgba(10,14,20,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .logo { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--text); }
+  .logo span { color: var(--green); }
+  nav .links { display: flex; gap: 22px; font-size: 14px; }
+  nav .links a { color: var(--dim); }
+  nav .links a:hover { color: var(--text); text-decoration: none; }
+  .gh-btn { font-family: var(--mono); font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; color: var(--text); }
+  .gh-btn:hover { border-color: var(--green); text-decoration: none; }
+
+  /* hero */
+  header { padding: 84px 0 64px; text-align: center; }
+  .kicker { font-family: var(--mono); font-size: 13px; letter-spacing: .12em; color: var(--green); text-transform: uppercase; }
+  h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.12; margin: 18px 0 20px; font-weight: 800; letter-spacing: -0.02em; }
+  h1 em { font-style: normal; color: var(--violet); }
+  .sub { max-width: 640px; margin: 0 auto 34px; color: var(--dim); font-size: 18px; }
+  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn { font-family: var(--mono); font-size: 14px; padding: 12px 22px; border-radius: 10px; border: 1px solid var(--line); color: var(--text); display: inline-block; }
+  .btn:hover { text-decoration: none; border-color: var(--faint); }
+  .btn.primary { background: var(--green); color: #06251a; border-color: var(--green); font-weight: 700; }
+  .btn.primary:hover { filter: brightness(1.1); }
+
+  /* sections */
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 26px; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .lede { color: var(--dim); margin-bottom: 34px; max-width: 640px; }
+
+  /* inversion table */
+  .invert { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .invert th { text-align: left; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .invert td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .invert td:first-child { color: var(--dim); width: 50%; }
+  .invert td:last-child { color: var(--text); }
+  .invert .arrow { color: var(--green); font-family: var(--mono); }
+
+  /* demo */
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .demo-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .panel-head { padding: 10px 16px; font-family: var(--mono); font-size: 12px; color: var(--dim); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.off { background: var(--red); }
+  .dot.wait { background: var(--amber); }
+  .panel-body { padding: 16px; }
+  .goal-input { width: 100%; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; color: var(--text); font-family: var(--mono); font-size: 13px; padding: 12px 14px; resize: vertical; min-height: 64px; }
+  .goal-input:focus { outline: none; border-color: var(--violet); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { font-family: var(--mono); font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); cursor: pointer; background: transparent; }
+  .chip:hover { border-color: var(--violet); color: var(--text); }
+  .run-btn { width: 100%; margin-top: 4px; background: var(--green); border: none; color: #06251a; font-weight: 700; font-family: var(--mono); font-size: 14px; padding: 12px; border-radius: 10px; cursor: pointer; }
+  .run-btn:disabled { opacity: .5; cursor: wait; }
+  .trace { font-family: var(--mono); font-size: 12.5px; line-height: 1.75; max-height: 420px; overflow-y: auto; }
+  .trace .t-kind { color: var(--violet); }
+  .trace .t-ok { color: var(--green); }
+  .trace .t-err { color: var(--red); }
+  .trace .t-dim { color: var(--faint); }
+  .outcome { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13.5px; display: none; }
+  .outcome .badge { font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 6px; }
+  .badge.ok { background: rgba(61,220,151,.14); color: var(--green); }
+  .badge.bad { background: rgba(255,107,107,.14); color: var(--red); }
+  .demo-note { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+
+  /* code block */
+  pre.code { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; overflow-x: auto; color: var(--text); }
+  pre.code .c { color: var(--faint); }
+  pre.code .k { color: var(--violet); }
+  pre.code .s { color: var(--green); }
+
+  /* principles */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .card h3 { font-size: 15px; font-family: var(--mono); color: var(--green); margin-bottom: 8px; }
+  .card p { font-size: 13.5px; color: var(--dim); }
+
+  footer { border-top: 1px solid var(--line); padding: 34px 0 60px; color: var(--faint); font-size: 13px; text-align: center; }
+  footer .mono { font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo">agent<span>os</span></div>
+    <div class="links">
+      <a href="#thesis">Thesis</a>
+      <a href="#demo">Live demo</a>
+      <a href="#code">Code</a>
+    </div>
+    <a class="gh-btn" href="https://github.com/TheronEagle/agentos">★ GitHub</a>
+  </div>
+</nav>
+
+<header class="wrap">
+  <div class="kicker">Service-as-Software · Open Source</div>
+  <h1>Software where <em>agents</em> are the operators.<br>You delegate outcomes, not clicks.</h1>
+  <p class="sub">SaaS sells you seats and features, then <b>you</b> do the work. AgentOS inverts the deal:
+  submit what <i>done</i> looks like — autonomous agents plan, execute, self-check, and deliver it.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="#demo">▶ Run a live outcome</a>
+    <a class="btn" href="https://github.com/TheronEagle/agentos">Read the manifesto</a>
+  </div>
+</header>
+
+<section id="thesis">
+  <div class="wrap">
+    <h2>The inversion</h2>
+    <p class="lede">Twenty years of SaaS optimized distribution, not work. Service-as-Software changes the unit of sale.</p>
+    <table class="invert">
+      <tr><th>SaaS world</th><th>Service-as-Software</th></tr>
+      <tr><td>GUI first — API as an afterthought</td><td><span class="arrow">→</span> OpenAPI schema first; GUIs are generated from it (like this site)</td></tr>
+      <tr><td>Seat-based pricing</td><td><span class="arrow">→</span> Outcome-based — you pay for delivered results</td></tr>
+      <tr><td>Humans click through workflows</td><td><span class="arrow">→</span> Agents operate end-to-end; humans set policy</td></tr>
+      <tr><td>Sessions, forms, dashboards</td><td><span class="arrow">→</span> Goals → executions → audit trails</td></tr>
+      <tr><td>Docs, onboarding, webinars</td><td><span class="arrow">→</span> Capability registry — agents discover abilities via <code>GET /capabilities</code></td></tr>
+      <tr><td>Chatbot bolted onto a dashboard</td><td><span class="arrow">→</span> Agent-native from day one. No retrofitting.</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap">
+    <h2>Live demo — delegate a real outcome</h2>
+    <p class="lede">This page talks to a running AgentOS instance over its public API. Pick a goal, hit delegate,
+    and watch the autonomous execution unfold: plan → tasks → validation → delivered outcome.
+    <span style="color:var(--faint)">Integration side effects run against deterministic fixtures — the pipeline is real, the outside world is simulated.</span></p>
+    <div class="demo-grid">
+      <div class="panel">
+        <div class="panel-head"><span><span class="dot off" id="api-dot"></span> API: <span id="api-state">checking…</span></span><span id="api-host" style="color:var(--faint)"></span></div>
+        <div class="panel-body">
+          <textarea id="goal" class="goal-input" spellcheck="false">Resolve all unresolved tier-1 tickets from last 24h</textarea>
+          <div class="chip-row">
+            <button class="chip" onclick="pick(this)">Generate and file Q3 SOC-2 evidence report</button>
+            <button class="chip" onclick="pick(this)">Update all outdated dependencies and run full test suite</button>
+          </div>
+          <button id="run" class="run-btn" onclick="delegate()">Delegate outcome →</button>
+          <p class="demo-note">Equivalent to <code>curl -X POST /goals -d '{"description": "…"}'</code> → 202 + ExecutionID.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span>execution trace</span><span id="exec-id" style="color:var(--faint)"></span></div>
+        <div class="panel-body">
+          <div id="trace" class="trace"><span class="t-dim">// waiting for a delegation…</span></div>
+          <div id="outcome" class="outcome"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="code">
+  <div class="wrap">
+    <h2>The API is the product</h2>
+    <p class="lede">No React app. No login pages. No admin dashboard. Agents read the schema; this page is a thin static wrapper around the same endpoints.</p>
+    <pre class="code"><span class="c"># discover what the platform can do (machines read this)</span>
+curl localhost:8080/capabilities
+
+<span class="c"># delegate an outcome — get an ExecutionID immediately</span>
+curl -X POST localhost:8080/goals <span class="k">\</span>
+  -H <span class="s">'Content-Type: application/json'</span> <span class="k">\</span>
+  -d <span class="s">'{"description": "Resolve all unresolved tier-1 tickets from last 24h"}'</span>
+<span class="c"># → 202 {"execution_id": "exec_…", "status": "planning"}</span>
+
+<span class="c"># collect the delivered outcome</span>
+curl localhost:8080/executions/exec_…   <span class="c"># outcome + full audit trail</span></pre>
+
+    <div class="principles" style="margin-top:26px">
+      <div class="card"><h3>Discovery over docs</h3><p>Agents learn the system from GET /capabilities — every capability ships typed JSON-Schema contracts, never READMEs.</p></div>
+      <div class="card"><h3>Autonomy by default</h3><p>AGENTOS_APPROVAL_POLICY=never ships full autonomy. Human gates are explicit opt-in configuration — never architectural assumption.</p></div>
+      <div class="card"><h3>Audit by construction</h3><p>Every execution carries an append-only trace: plan, tasks, validations, deliveries. Replayable, greppable, honest.</p></div>
+      <div class="card"><h3>Zero-key demo mode</h3><p>Deterministic LLM stubs + fixture integrations. pip install, pytest green, offline. Real providers slot in via env config.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">agentos</span> — MIT licensed · built for the agents that will operate it<br><br>
+    <a href="https://github.com/TheronEagle/agentos">github.com/TheronEagle/agentos</a>
+  </div>
+</footer>
+
+<script>
+// ── API host: same-origin if served by AgentOS itself, else the public tunnel.
+const TUNNEL = "https://chemical-sunshine-bryan-trees.trycloudflare.com";
+const API = (location.protocol.startsWith("http") && !location.hostname.includes("github.io")
+  ? location.origin : TUNNEL);
+
+const $ = id => document.getElementById(id);
+
+async function checkHealth() {
+  const dot = $("api-dot"), state = $("api-state");
+  $("api-host").textContent = API.replace(/^https?:\/\//, "");
+  try {
+    const r = await fetch(API + "/health", {signal: AbortSignal.timeout(8000)});
+    const j = await r.json();
+    dot.className = "dot on";
+    state.textContent = "online · " + j.modules.join(" / ");
+  } catch {
+    dot.className = "dot off";
+    state.textContent = "demo instance offline — start yours: uvicorn agentos.interfaces.api:get_app --factory";
+  }
+}
+
+function pick(btn) { $("goal").value = btn.textContent.trim(); }
+
+function line(kind, msg, cls) {
+  const div = document.createElement("div");
+  div.innerHTML = `<span class="t-kind">[${kind}]</span> <span class="${cls || ""}">${msg}</span>`;
+  $("trace").appendChild(div);
+  $("trace").scrollTop = $("trace").scrollHeight;
+}
+
+async function delegate() {
+  const btn = $("run");
+  btn.disabled = true; btn.textContent = "executing…";
+  $("trace").innerHTML = "";
+  $("outcome").style.display = "none";
+  $("exec-id").textContent = "";
+
+  line("POST", '/goals → ' + JSON.stringify({description: $("goal").value.slice(0, 60) + "…"}));
+  let exec;
+  try {
+    const r = await fetch(API + "/goals", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({description: $("goal").value, requested_by: "site-visitor"}),
+    });
+    if (r.status !== 202) {
+      const e = await r.json().catch(() => ({detail: r.statusText}));
+      line("422", (e.detail || "rejected").toString(), "t-err");
+      btn.disabled = false; btn.textContent = "Delegate outcome →";
+      return;
+    }
+    exec = await r.json();
+  } catch (err) {
+    line("error", "cannot reach API — is the demo instance up?", "t-err");
+    btn.disabled = false; btn.textContent = "Delegate outcome →";
+    return;
+  }
+
+  $("exec-id").textContent = exec.execution_id;
+  line("202", "accepted · execution " + exec.execution_id + " · module: " + exec.module, "t-ok");
+
+  // Poll like a machine.
+  let final = null;
+  for (let i = 0; i < 200; i++) {
+    const r = await fetch(API + "/executions/" + exec.execution_id);
+    final = await r.json();
+    if (["completed", "failed", "cancelled"].includes(final.status)) break;
+    await new Promise(res => setTimeout(res, 150));
+  }
+
+  for (const e of final.trace || []) {
+    const cls = e.kind.includes("succeeded") || e.kind === "outcome_delivered" ? "t-ok"
+              : e.kind === "task_failed" || e.kind === "error" ? "t-err" : "";
+    line(e.kind, (e.task_id ? e.task_id + " · " : "") + e.message, cls);
+  }
+
+  const box = $("outcome");
+  box.style.display = "block";
+  if (final.status === "completed" && final.outcome) {
+    const o = final.outcome;
+    box.innerHTML = `<span class="badge ok">OUTCOME · validated</span>
+      <p style="margin-top:8px"><b>${o.summary}</b></p>
+      <p style="color:var(--dim);margin-top:4px"><code>${JSON.stringify(o.metrics)}</code></p>`;
+  } else {
+    box.innerHTML = `<span class="badge bad">${final.status.toUpperCase()}</span>
+      <p style="margin-top:8px;color:var(--red)">${final.error || "execution did not complete"}</p>`;
+  }
+  btn.disabled = false; btn.textContent = "Delegate outcome →";
+}
+
+checkHealth();
+</script>
+</body>
+</html>
