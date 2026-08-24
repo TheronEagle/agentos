@@ -10,6 +10,7 @@ Design rules:
 from __future__ import annotations
 
 import hmac
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -160,6 +161,17 @@ def create_app(platform: Platform | None = None) -> FastAPI:
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url=None,
+    )
+
+    # CORS: the project's own static site (and any agent page) may call the API
+    # from a browser. Wide-open by default — gate real callers with AGENTOS_API_KEY.
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=os.environ.get("AGENTOS_CORS_ORIGINS", "*").split(","),
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # ── Discovery ────────────────────────────────────────────────────────────
