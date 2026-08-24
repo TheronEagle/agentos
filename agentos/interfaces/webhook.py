@@ -29,13 +29,17 @@ async def deliver_callback(
     payload: dict[str, Any],
     secret: str | None = None,
     timeout: float = 15.0,
+    _transport: Any | None = None,
 ) -> tuple[bool, str]:
     body = httpx.Request("POST", callback_url, json=payload).read()
     headers = {"Content-Type": "application/json"}
     if secret:
         headers["X-AgentOS-Signature"] = sign(body, secret)
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        client_kwargs: dict[str, Any] = {"timeout": timeout}
+        if _transport is not None:
+            client_kwargs["transport"] = _transport
+        async with httpx.AsyncClient(**client_kwargs) as client:
             response = await client.post(callback_url, content=body, headers=headers)
             return response.status_code < 400, f"status={response.status_code}"
     except Exception as exc:  # noqa: BLE001 - delivery is best-effort, traced always

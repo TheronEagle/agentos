@@ -228,7 +228,13 @@ class Engine:
                 dep_status(execution, d) == "succeeded" for d in task.depends_on
             )
             if not deps_ok:
-                task.mark_failed("upstream dependency failed")
+                # Never ran — mark skipped, not failed. The execution still
+                # fails overall, but the trace distinguishes "did work and
+                # broke" from "was never eligible to run".
+                task.status = "skipped"
+                task.error = "upstream dependency did not succeed"
+                task.finished_at = _now()
+                execution.add_event("task_skipped", task.description, task_id=task.id)
                 return
             async with sem:
                 task.mark_running()
