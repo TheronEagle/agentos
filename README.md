@@ -6,9 +6,13 @@
 
 *You don't use AgentOS. You delegate outcomes to it.*
 
+▶ **Live demo: [theroneagle.github.io/agentos](https://theroneagle.github.io/agentos/)** — pick a goal, watch agents execute it.
+
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![API-first](https://img.shields.io/badge/interface-OpenAPI%20first-6B46C1.svg)](#the-api-is-the-product)
+[![Live demo](https://img.shields.io/badge/demo-theroneagle.github.io%2Fagentos-3DDC97.svg)](https://theroneagle.github.io/agentos/)
+[![Release](https://img.shields.io/github/v/release/TheronEagle/agentos)](https://github.com/TheronEagle/agentos/releases)
 
 </div>
 
