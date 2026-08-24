@@ -149,7 +149,7 @@
     <span style="color:var(--faint)">Integration side effects run against deterministic fixtures — the pipeline is real, the outside world is simulated.</span></p>
     <div class="demo-grid">
       <div class="panel">
-        <div class="panel-head"><span><span class="dot off" id="api-dot"></span> API: <span id="api-state">checking…</span></span><span id="api-host" style="color:var(--faint)"></span></div>
+        <div class="panel-head"><span><span class="dot off" id="api-dot"></span> API: <span id="api-state">checking…</span></span><span id="api-host" style="color:var(--faint)" title="append ?api=<url> to point the demo at your own instance"></span> <a href="?api=http://localhost:8080" style="color:var(--faint);font-size:11px" id="api-local">use mine →</a></div>
         <div class="panel-body">
           <textarea id="goal" class="goal-input" spellcheck="false">Resolve all unresolved tier-1 tickets from last 24h</textarea>
           <div class="chip-row">
@@ -205,7 +205,9 @@ curl localhost:8080/executions/exec_…   <span class="c"># outcome + full audit
 
 <script>
 // ── API host: same-origin if served by AgentOS itself, else the public tunnel.
-const TUNNEL = "https://whatever-killing-laptop-consistent.trycloudflare.com";
+// Demo API: ?api=<url> overrides; else the public instance; same-origin if AgentOS serves this file.
+const FALLBACK = "https://whatever-killing-laptop-consistent.trycloudflare.com";
+const TUNNEL = new URLSearchParams(location.search).get("api") || FALLBACK;
 const API = (location.protocol.startsWith("http") && !location.hostname.includes("github.io")
   ? location.origin : TUNNEL);
 
